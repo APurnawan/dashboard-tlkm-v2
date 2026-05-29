@@ -7,4 +7,3 @@ scikit-learn
 matplotlib
 plotly
 joblib
-tensorflow==2.19.0
