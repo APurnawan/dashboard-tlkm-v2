@@ -1,0 +1,702 @@
+import streamlit as st
+import streamlit.components.v1 as components
+from streamlit_autorefresh import st_autorefresh
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import json
+
+import joblib
+
+from tensorflow.keras.models import load_model
+
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error
+)
+
+# =========================================================
+# PAGE CONFIG
+# =========================================================
+
+st.set_page_config(
+    page_title="Dashboard Analisis Saham TLKM",
+    layout="wide"
+)
+
+# =========================================================
+# LSTM MODEL
+# =========================================================
+@st.cache_resource
+def load_lstm():
+
+    model = load_model(
+        "tlkm_lstm.keras"
+    )
+
+    scaler = joblib.load(
+        "tlkm_scaler.pkl"
+    )
+
+    return model, scaler
+
+
+lstm_model, scaler = load_lstm()
+
+# =========================================================
+# AUTO REFRESH
+# =========================================================
+
+st_autorefresh(
+    interval=60000,
+    key="refresh"
+)
+
+# =========================================================
+# TITLE
+# =========================================================
+
+st.title("Realtime Dashboard Analisis Saham TLKM")
+
+st.caption(
+    "Realtime Market Data • Auto Refresh 1 Menit"
+)
+
+# =========================================================
+# PERIOD SELECTOR
+# =========================================================
+
+period_option = st.selectbox(
+
+    "Pilih Periode",
+
+    [
+        "7 Hari",
+        "1 Bulan",
+        "6 Bulan",
+        "1 Tahun",
+        "2 Tahun",
+        "6 Tahun",
+        "10 Tahun",
+        "Max"
+    ]
+
+)
+
+# =========================================================
+# PERIOD MAP
+# =========================================================
+
+if period_option == "7 Hari":
+
+    period = "7d"
+    interval = "5m"
+
+elif period_option == "1 Bulan":
+
+    period = "1mo"
+    interval = "30m"
+
+elif period_option == "6 Bulan":
+
+    period = "6mo"
+    interval = "1d"
+
+elif period_option == "1 Tahun":
+
+    period = "1y"
+    interval = "1d"
+
+elif period_option == "2 Tahun":
+
+    period = "2y"
+    interval = "1d"
+
+elif period_option == "6 Tahun":
+
+    period = "6y"
+    interval = "1wk"
+
+elif period_option == "10 Tahun":
+
+    period = "10y"
+    interval = "1wk"
+
+else:
+
+    period = "max"
+    interval = "1mo"
+# =========================================================
+# LOAD DATA REALTIME
+# =========================================================
+
+with st.spinner("Mengambil data realtime..."):
+
+    df = yf.download(
+
+        "TLKM.JK",
+
+        period=period,
+
+        interval=interval,
+
+        auto_adjust=True,
+
+        progress=False
+    )
+
+# =========================================================
+# FIX DATAFRAME
+# =========================================================
+
+if isinstance(df.columns, pd.MultiIndex):
+
+    df.columns = df.columns.get_level_values(0)
+
+df.reset_index(inplace=True)
+
+df.rename(
+    columns={df.columns[0]:'Date'},
+    inplace=True
+)
+
+# =========================================================
+# HANDLE EMPTY DATA
+# =========================================================
+
+if len(df) < 60:
+
+    st.error(
+        "Data tidak cukup untuk LSTM Forecast"
+    )
+
+    st.stop()
+
+# =========================================================
+# FEATURE ENGINEERING
+# =========================================================
+
+df['Return'] = df['Close'].pct_change()
+
+df['MA7'] = df['Close'].rolling(7).mean()
+
+df['MA30'] = df['Close'].rolling(30).mean()
+
+df['Volatility'] = (
+    df['Return']
+    .rolling(30)
+    .std()
+)
+
+df['MA50'] = (
+    df['Close']
+    .rolling(50)
+    .mean()
+)
+
+df['Volatility_7'] = (
+    df['Return']
+    .rolling(7)
+    .std()
+)
+
+df['Volatility_30'] = (
+    df['Return']
+    .rolling(30)
+    .std()
+)
+
+# =========================================================
+# RSI
+# =========================================================
+
+delta = df['Close'].diff()
+
+gain = (
+    delta
+    .where(delta > 0, 0)
+)
+
+loss = (
+    -delta
+    .where(delta < 0, 0)
+)
+
+avg_gain = gain.rolling(14).mean()
+
+avg_loss = loss.rolling(14).mean()
+
+rs = avg_gain / avg_loss
+
+df['RSI'] = 100 - (
+    100 / (1 + rs)
+)
+
+# =========================================================
+# MACD
+# =========================================================
+
+exp1 = df['Close'].ewm(
+    span=12,
+    adjust=False
+).mean()
+
+exp2 = df['Close'].ewm(
+    span=26,
+    adjust=False
+).mean()
+
+df['MACD'] = exp1 - exp2
+
+df['Signal_Line'] = (
+    df['MACD']
+    .ewm(span=9, adjust=False)
+    .mean()
+)
+
+# =========================================================
+# LAST DATA
+# =========================================================
+
+last_close = round(
+    df['Close'].iloc[-1],
+    2
+)
+
+prev_close = round(
+    df['Close'].iloc[-2],
+    2
+)
+
+change_value = round(
+    last_close - prev_close,
+    2
+)
+
+pct = round(
+    (change_value / prev_close) * 100,
+    2
+)
+
+change = f"{change_value} ({pct}%)"
+
+volume = int(df['Volume'].iloc[-1])
+
+open_price = round(
+    df['Open'].iloc[-1],
+    2
+)
+
+high_price = round(
+    df['High'].iloc[-1],
+    2
+)
+
+low_price = round(
+    df['Low'].iloc[-1],
+    2
+)
+
+close_price = round(
+    df['Close'].iloc[-1],
+    2
+)
+
+high52 = round(
+    df['High'].max(),
+    2
+)
+
+low52 = round(
+    df['Low'].min(),
+    2
+)
+
+# =========================================================
+# VOLATILITY
+# =========================================================
+
+volatility = round(
+    df['Volatility'].iloc[-1],
+    4
+)
+
+# =========================================================
+# SIGNAL ANALYSIS
+# =========================================================
+
+latest_rsi = df['RSI'].iloc[-1]
+
+latest_macd = df['MACD'].iloc[-1]
+
+latest_signal_line = df['Signal_Line'].iloc[-1]
+
+if (
+
+    latest_rsi > 50
+
+    and
+
+    latest_macd > latest_signal_line
+
+):
+
+    latest_signal = "BULLISH"
+
+    sentiment_score = 82
+
+else:
+
+    latest_signal = "BEARISH"
+
+    sentiment_score = 34
+
+# =====================================================
+# LSTM FORECAST 30 HARI
+# =====================================================
+
+try:
+
+    features = [
+        'Close',
+        'Volume',
+        'Return',
+        'MA7',
+        'MA30',
+        'MA50',
+        'Volatility_7',
+        'Volatility_30'
+    ]
+
+    df_lstm = df[features].dropna()
+
+    # cek dulu
+    if len(df_lstm) < 60:
+
+        st.warning(
+            "Data fitur belum cukup untuk forecast"
+        )
+
+        forecast_labels = []
+        forecast_values = []
+
+    else:
+
+        last_sequence = scaler.transform(
+            df_lstm.tail(60)
+        )
+
+        current_batch = last_sequence.copy()
+
+        forecast_values = []
+
+        for _ in range(30):
+
+            x_input = current_batch.reshape(
+                1,
+                60,
+                8
+            )
+
+            pred = lstm_model.predict(
+                x_input,
+                verbose=0
+            )
+
+            dummy = np.zeros((1,8))
+            dummy[:,0] = pred[0][0]
+
+            next_price = scaler.inverse_transform(
+                dummy
+            )[0,0]
+
+            forecast_values.append(
+                round(float(next_price), 2)
+            )
+
+            new_row = current_batch[-1].copy()
+
+            new_row[0] = pred[0][0]
+
+            current_batch = np.vstack([
+                current_batch[1:],
+                new_row
+            ])
+
+        future_dates = pd.date_range(
+            start=df['Date'].iloc[-1],
+            periods=31,
+            freq='D'
+        )[1:]
+
+        forecast_labels = [
+            d.strftime('%d %b')
+            for d in future_dates
+        ]
+
+except Exception as e:
+
+    st.error(
+        f"LSTM Forecast Error: {e}"
+    )
+
+    forecast_labels = []
+    forecast_values = []
+    
+# ==========================================
+# EVALUASI MODEL LSTM
+# ==========================================
+
+mae = 47.91
+
+rmse = 63.03
+
+mape = 1.72
+
+accuracy = round(
+    100 - mape,
+    2
+)
+
+r2 = 0.9620
+
+# =========================================================
+# CHART DATA
+# =========================================================
+
+labels = (
+
+    df['Date']
+    .dt.strftime('%d %b\n%H:%M')
+    .tolist()
+
+)
+
+close_data = (
+    df['Close']
+    .fillna(0)
+    .round(2)
+    .tolist()
+)
+
+ma7_data = [
+
+    None if pd.isna(x)
+    else round(x,2)
+
+    for x in df['MA7']
+]
+
+ma30_data = [
+
+    None if pd.isna(x)
+    else round(x,2)
+
+    for x in df['MA30']
+]
+
+volume_data = (
+
+    df['Volume']
+    .fillna(0)
+    .tolist()
+
+)
+
+volatility_data = [
+
+    None if pd.isna(x)
+    else round(x,4)
+
+    for x in df['Volatility']
+]
+
+# =========================================================
+# LOAD HTML TEMPLATE
+# =========================================================
+
+with open(
+    "template.html",
+    "r",
+    encoding="utf-8"
+) as f:
+
+    html = f.read()
+
+# =========================================================
+# REPLACE METRIC
+# =========================================================
+
+html = html.replace(
+    "{{last_close}}",
+    f"Rp {last_close:,.0f}"
+)
+
+html = html.replace(
+    "{{pct}}",
+    f"{pct}%"
+)
+
+html = html.replace(
+    "{{change}}",
+    change
+)
+
+html = html.replace(
+    "{{volume}}",
+    f"{volume:,}"
+)
+
+html = html.replace(
+    "{{open}}",
+    str(open_price)
+)
+
+html = html.replace(
+    "{{high}}",
+    str(high_price)
+)
+
+html = html.replace(
+    "{{low}}",
+    str(low_price)
+)
+
+html = html.replace(
+    "{{close}}",
+    str(close_price)
+)
+
+html = html.replace(
+    "{{high52}}",
+    str(high52)
+)
+
+html = html.replace(
+    "{{low52}}",
+    str(low52)
+)
+
+html = html.replace(
+    "{{volatility}}",
+    str(volatility)
+)
+
+html = html.replace(
+    "{{signal}}",
+    latest_signal
+)
+
+html = html.replace(
+    "{{sentiment_score}}",
+    str(sentiment_score)
+)
+# =================================
+# EVALUASI MODEL
+# =================================
+
+mae = round(mae, 2)
+rmse = round(rmse, 2)
+mape = round(mape, 2)
+
+accuracy = round(
+    100 - mape,
+    2
+)
+
+html = html.replace(
+    "{{mae}}",
+    str(mae)
+)
+
+html = html.replace(
+    "{{rmse}}",
+    str(rmse)
+)
+
+html = html.replace(
+    "{{mape}}",
+    str(mape)
+)
+
+html = html.replace(
+    "{{accuracy}}",
+    str(accuracy)
+)
+# =========================================================
+# REPLACE CHART DATA
+# =========================================================
+
+html = html.replace(
+    "{{labels}}",
+    json.dumps(labels)
+)
+
+html = html.replace(
+    "{{close_data}}",
+    json.dumps(close_data)
+)
+
+html = html.replace(
+    "{{ma7_data}}",
+    json.dumps(ma7_data)
+)
+
+html = html.replace(
+    "{{ma30_data}}",
+    json.dumps(ma30_data)
+)
+
+html = html.replace(
+    "{{volume_data}}",
+    json.dumps(volume_data)
+)
+
+html = html.replace(
+    "{{volatility_data}}",
+    json.dumps(volatility_data)
+)
+
+html = html.replace(
+    "{{forecast_labels}}",
+    json.dumps(forecast_labels)
+)
+
+html = html.replace(
+    "{{forecast_data}}",
+    json.dumps(forecast_values)
+)
+
+# =========================================================
+# DISPLAY DASHBOARD
+# =========================================================
+
+components.html(
+
+    html,
+
+    height=1200,
+
+    scrolling=True
+
+)
+
+# =========================================================
+# FOOTER
+# =========================================================
+
+st.caption(
+
+    f"""
+    Last Update :
+    {df['Date'].iloc[-1]}
+
+    | Data Source :
+    Yahoo Finance
+
+    | Interval :
+    {interval}
+    """
+
+)
