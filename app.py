@@ -658,7 +658,7 @@ html = html.replace(
 
 st.components.v1.html(
     html,
-    height=1800,
+    height=1500,
     scrolling=True
 )
 
