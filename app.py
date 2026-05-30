@@ -382,13 +382,21 @@ r2 = 0.9620
 # CHART DATA
 # =========================================================
 
-labels = (
+if period_option in ["7 Hari", "1 Bulan"]:
 
-    df['Date']
-    .dt.strftime('%d %b\n%H:%M')
-    .tolist()
+    labels = (
+        df['Date']
+        .dt.strftime('%d %b')
+        .tolist()
+    )
 
-)
+else:
+
+    labels = (
+        df['Date']
+        .dt.strftime('%b %Y')
+        .tolist()
+    )
 
 close_data = (
     df['Close']
