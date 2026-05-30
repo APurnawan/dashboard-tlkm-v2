@@ -358,6 +358,20 @@ try:
         "forecast_30hari.csv"
     )
 
+    forecast_table = forecast_df.copy()
+
+    forecast_table["Date"] = (
+        pd.to_datetime(
+            forecast_table["Date"]
+        )
+        .dt.strftime("%d %b %Y")
+    )
+
+    forecast_table["Forecast"] = (
+        forecast_table["Forecast"]
+        .round(2)
+    )
+
     forecast_period = (
         pd.to_datetime(
             forecast_df["Date"].iloc[0]
@@ -393,6 +407,7 @@ except Exception as e:
     forecast_values = []
     forecast_period = "-"
 
+    forecast_table = pd.DataFrame()
 # ==========================================
 # EVALUASI MODEL LSTM
 # ==========================================
@@ -641,14 +656,19 @@ html = html.replace(
 # DISPLAY DASHBOARD
 # =========================================================
 
-components.html(
-
+st.components.v1.html(
     html,
-
-    height=1200,
-
+    height=2200,
     scrolling=True
+)
 
+st.subheader(
+    "Tabel Forecast LSTM 30 Hari"
+)
+
+st.dataframe(
+    forecast_table,
+    use_container_width=True
 )
 
 # =========================================================
