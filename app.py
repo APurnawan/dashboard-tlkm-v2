@@ -1,4 +1,8 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import joblib
+import sklearn
 
-st.title("Test App")
-st.success("Berhasil")
+st.success("Semua package berhasil diinstall")
