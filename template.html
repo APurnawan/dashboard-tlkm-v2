@@ -1151,38 +1151,64 @@ new Chart(forecastChart, {
             }
         },
 
-        scales:{
+scales:{
 
-            x:{
-            ticks:{
-               color:'#cbd5e1',
+    x:{
 
-               autoSkip:true,
+        title:{
+            display:true,
+            text:'Tanggal',
+            color:'#cbd5e1',
+            font:{
+                size:14,
+                weight:'bold'
+            }
+        },
 
-               maxTicksLimit:8,
+        ticks:{
+            color:'#cbd5e1',
 
-               maxRotation:0,
+            autoSkip:true,
 
-               minRotation:0
-            },
+            maxTicksLimit:8,
 
-         grid:{
-             
-           color:'rgba(255,255,255,0.05)'        
-       }
+            maxRotation:0,
+
+            minRotation:0
+        },
+
+        grid:{
+            color:'rgba(255,255,255,0.05)'
+        }
     },
 
-            y:{
-                ticks:{
-                    color:'#cbd5e1'
-                },
+    y:{
 
-                grid:{
-                    color:'rgba(255,255,255,0.05)'
-                }
+        title:{
+            display:true,
+            text:'Harga Saham (Rp)',
+            color:'#cbd5e1',
+            font:{
+                size:14,
+                weight:'bold'
             }
+        },
 
+        ticks:{
+            color:'#cbd5e1',
+
+            callback:function(value){
+                return 'Rp ' +
+                    value.toLocaleString('id-ID');
+            }
+        },
+
+        grid:{
+            color:'rgba(255,255,255,0.05)'
         }
+    }
+
+}
 
     }
 
