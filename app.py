@@ -5,4 +5,8 @@ import yfinance as yf
 import joblib
 import sklearn
 
-st.success("Semua package berhasil diinstall")
+import tensorflow as tf
+
+st.success("TensorFlow berhasil diinstall")
+
+st.write(tf.__version__)
