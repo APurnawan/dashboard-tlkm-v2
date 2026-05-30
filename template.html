@@ -677,9 +677,9 @@ Realtime Market Dashboard
         <!-- FORECAST -->
         <div class="card-custom forecast-box">
 
-            <h6 class="mb-3">
-                Forecast 30 Hari
-            </h6>
+        <h6 class="mb-3">
+            Prediksi Harga Saham 30 Hari (LSTM)
+        </h6>
 
             <div class="forecast-container">
                 <canvas id="forecastChart"></canvas>
@@ -689,24 +689,29 @@ Realtime Market Dashboard
 
             <div class="row text-center">
 
-                <div class="col-3">
+                <div class="col">
                     <div class="card-title-small">MAE</div>
                     <h5>{{mae}}</h5>
                 </div>
 
-                <div class="col-3">
+                <div class="col">
                     <div class="card-title-small">RMSE</div>
                     <h5>{{rmse}}</h5>
                 </div>
 
-                <div class="col-3">
+                <div class="col">
                     <div class="card-title-small">MAPE</div>
                     <h5>{{mape}}%</h5>
                 </div>
 
-                <div class="col-3">
+                <div class="col">
                     <div class="card-title-small">ACC</div>
                     <h5 class="green">{{accuracy}}%</h5>
+                </div>
+
+                <div class="col">
+                    <div class="card-title-small">R²</div>
+                    <h5 class="green">{{r2}}</h5>
                 </div>
 
             </div>
@@ -1114,7 +1119,7 @@ new Chart(forecastChart, {
 
         datasets:[{
 
-            label:'Forecast 30 Hari',
+            label:'Forecast LSTM 30 Hari',
 
             data: {{forecast_data}},
 
