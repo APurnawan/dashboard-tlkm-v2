@@ -670,7 +670,31 @@ st.dataframe(
     forecast_table,
     use_container_width=True
 )
+st.subheader(
+    "Ringkasan Statistik Historis"
+)
 
+stats_df = pd.DataFrame({
+
+    "Parameter":[
+        "Harga Tertinggi",
+        "Harga Terendah",
+        "Rata-rata Close",
+        "Standar Deviasi"
+    ],
+
+    "Nilai":[
+        round(df["Close"].max(),2),
+        round(df["Close"].min(),2),
+        round(df["Close"].mean(),2),
+        round(df["Close"].std(),2)
+    ]
+})
+
+st.dataframe(
+    stats_df,
+    use_container_width=True
+)
 # =========================================================
 # FOOTER
 # =========================================================
