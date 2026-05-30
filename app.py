@@ -530,6 +530,10 @@ html = html.replace(
     str(sentiment_score)
 )
 
+html = html.replace(
+    "{{forecast_period}}",
+    forecast_period
+)
 
 # =================================
 # EVALUASI MODEL
