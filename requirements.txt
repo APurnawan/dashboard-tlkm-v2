@@ -1,6 +1,10 @@
 streamlit
+streamlit-autorefresh
+yfinance
 pandas
 numpy
-yfinance
-joblib
 scikit-learn
+matplotlib
+plotly
+joblib
+tensorflow==2.16.1
