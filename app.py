@@ -256,12 +256,12 @@ last_close = round(
 )
 
 today_close = round(
-    float(daily_df['Close'].iloc[-1]),
+    daily_df['Close'].values[-1].item(),
     2
 )
 
 yesterday_close = round(
-    float(daily_df['Close'].iloc[-2]),
+    daily_df['Close'].values[-2].item(),
     2
 )
 
