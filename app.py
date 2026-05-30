@@ -121,7 +121,22 @@ with st.spinner("Mengambil data realtime..."):
 
         progress=False
     )
+# =========================================================
+# DATA HARIAN UNTUK PERUBAHAN HARGA
+# =========================================================
 
+daily_df = yf.download(
+
+    "TLKM.JK",
+
+    period="7d",
+
+    interval="1d",
+
+    auto_adjust=True,
+
+    progress=False
+)
 # =========================================================
 # FIX DATAFRAME
 # =========================================================
@@ -236,22 +251,27 @@ df['Signal_Line'] = (
 # =========================================================
 
 last_close = round(
-    df['Close'].iloc[-1],
+    float(df['Close'].iloc[-1]),
     2
 )
 
-prev_close = round(
-    df['Close'].iloc[-2],
+today_close = round(
+    float(daily_df['Close'].iloc[-1]),
+    2
+)
+
+yesterday_close = round(
+    float(daily_df['Close'].iloc[-2]),
     2
 )
 
 change_value = round(
-    last_close - prev_close,
+    today_close - yesterday_close,
     2
 )
 
 pct = round(
-    (change_value / prev_close) * 100,
+    (change_value / yesterday_close) * 100,
     2
 )
 
