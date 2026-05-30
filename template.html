@@ -677,9 +677,13 @@ Realtime Market Dashboard
         <!-- FORECAST -->
         <div class="card-custom forecast-box">
 
-        <h6 class="mb-3">
+        <h6 class="mb-1">
             Prediksi Harga Saham 30 Hari (LSTM)
         </h6>
+
+        <div class="card-title-small mb-3">
+            Periode Forecast: {{forecast_period}}
+        </div>
 
             <div class="forecast-container">
                 <canvas id="forecastChart"></canvas>
