@@ -337,7 +337,18 @@ try:
     forecast_df = pd.read_csv(
         "forecast_30hari.csv"
     )
-
+    
+forecast_period = (
+    pd.to_datetime(
+        forecast_df["Date"].iloc[0]
+    ).strftime("%d %b %Y")
+    +
+    " - " +
+    pd.to_datetime(
+        forecast_df["Date"].iloc[-1]
+    ).strftime("%d %b %Y")
+    
+)
     forecast_labels = (
         pd.to_datetime(
             forecast_df["Date"]
